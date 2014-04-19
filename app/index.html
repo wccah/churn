@@ -1,23 +1,80 @@
 <!doctype html>
 <html lang="en" ng-app="myApp">
 <head>
-  <meta charset="utf-8">
-  <title>My AngularJS App</title>
-  <link rel="stylesheet" href="css/app.css"/>
+    <title>My AngularJS App</title>
+    <link rel="stylesheet" href="css/app.css"/>
+    <script src="js/angular/angular.js"></script>
+    <script src="js/angular/angular-route.js"></script>
+    <script src="js/angular/angular-resource.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/services.js"></script>
+    <script src="js/controllers.js"></script>
+    <script src="js/filters.js"></script>
+    <script src="js/directives.js"></script>
 </head>
-<body>
+<body ng-controller="myController">
   <ul>
-  	<li ng-repeat="for card in cards">
-  	{{ card.name }}
+      <li>
+          <input ng-model="newCard.name" />
+
+          <input type='button' ng-click="saveCard(newCard)" value="save"/>
+      </li>
+  	<li ng-repeat="card in cards">
+        <span style="display:none">{{card | json}}</span>
+        <div>
+            <label>
+                name:
+            </label>
+            <input ng-model="card.name">
+        </div>
+
+        <div>
+            <label>deadline:</label>
+            <input date-input ng-model="card.deadline">
+        </div>
+        <div>
+            <label>reward:</label>
+            <input ng-model="card.reward">
+        </div>
+        <div>
+            <label>
+                unit:
+            </label>
+            <input ng-model="card.rewardUnit">
+        </div>
+        <div>
+            <label>min:</label>
+            <input ng-model="card.minSpend">
+        </div>
+        <div>
+            <ul>
+                <li>
+                    <div>
+                        <label>as of:</label>
+                        <input date-input ng-model="newBalance.asOf" />
+
+                        <label>bal:</label>
+                        <input ng-model="newBalance.amount" />
+                    </div>
+                </li>
+                <li ng-repeat="bal in card.balances">
+                    <div>
+                        <label>as of:</label>
+                        {{ bal.asOf | date: 'mm/dd/yyyy' }}
+
+                        <label>bal: </label>
+                        {{ bal.amount }}
+                    </div>
+                </li>
+            </ul>
+        </div>
+        <div>
+            <input type="button" ng-click="saveCard(card)" value="save">
+            <input type="button" ng-click="deleteCard(card)" value="delete">
+        </div>
   	</li>
   </ul>
   
-  <script src="js/angular/angular.js"></script>
-  <script src="js/angular/angular-route.js"></script>
-  <script src="js/app.js"></script>
-  <script src="js/services.js"></script>
-  <script src="js/controllers.js"></script>
-  <script src="js/filters.js"></script>
-  <script src="js/directives.js"></script>
+
 </body>
 </html>
