@@ -2,8 +2,9 @@ var restify = require('restify');
 var restMongoose = require('restify-mongoose');
 var mongoose = require('mongoose/');
 var config = require('./config');
-db = mongoose.connect(config.creds.mongoose_auth),
-Schema = mongoose.Schema;
+console.log(config.creds.mongoose_auth);
+var db = mongoose.connect(config.creds.mongoose_auth);
+var Schema = mongoose.Schema;
 
 /*
 var mongodbServer = restify.createServer({
@@ -52,7 +53,8 @@ server.put('/api/card', cardRM.insert());
 server.patch('/ap/card/:id', cardRM.update());
 server.del('/api/card/:id', cardRM.remove());
 
-server.listen(80, function() {
-	console.log('listening');
+var port = process.env.port || 8080;
+server.listen(port, function() {
+	console.log('listening ', port);
 });
 

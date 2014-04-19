@@ -25,6 +25,7 @@
     "mongodb": "^1.4.0",
     "restify": "^2.7.0",
     "mongoose": "^3.8.8",
-    "restify-mongoose": "^0.1.1"
+    "restify-mongoose": "^0.1.1",
+    "express": "^4.0.0"
   }
 }
