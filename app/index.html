@@ -13,7 +13,7 @@
     <script src="js/directives.js"></script>
 </head>
 <body ng-controller="myController">
-  <ul>
+  <ol>
       <li>
           <input ng-model="newCard.name" />
 
@@ -47,33 +47,42 @@
             <input ng-model="card.minSpend">
         </div>
         <div>
-            <ul>
-                <li>
-                    <div>
-                        <label>as of:</label>
-                        <input date-input ng-model="newBalance.asOf" />
-
-                        <label>bal:</label>
-                        <input ng-model="newBalance.amount" />
-                    </div>
-                </li>
-                <li ng-repeat="bal in card.balances">
-                    <div>
-                        <label>as of:</label>
-                        {{ bal.asOf | date: 'mm/dd/yyyy' }}
-
-                        <label>bal: </label>
-                        {{ bal.amount }}
-                    </div>
-                </li>
-            </ul>
+            <label>bal:</label>
+            <label>{{card.balance.amount}}</label>
         </div>
         <div>
             <input type="button" ng-click="saveCard(card)" value="save">
             <input type="button" ng-click="deleteCard(card)" value="delete">
         </div>
+        <div>
+            <button ng-click="showBalances(card._id)">show bals</button>
+            <ul>
+                <li>
+                    <div>
+                        <label>as of:</label>
+                        <input date-input ng-model="card.newBalance.asOf" />
+
+                        <label>bal:</label>
+                        <input ng-model="card.newBalance.amount" />
+
+                        <button ng-click="saveBalance(card.newBalance)">save bal</button>
+                    </div>
+                </li>
+                <li ng-repeat="bal in card.balances">
+                    <div>
+                        <label>as of:</label>
+                        <span>{{ bal.asOf | date: 'MM/dd/yyyy' }}</span>
+
+                        <label>bal: </label>
+                        <span>{{ bal.amount }}</span>
+
+                        <button ng-click="deleteBalance(card._id, bal._id)">del bal</button>
+                    </div>
+                </li>
+            </ul>
+        </div>
   	</li>
-  </ul>
+  </ol>
   
 
 </body>

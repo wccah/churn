@@ -10,7 +10,6 @@ mongoose.connect('mongodb://churn:churn@localhost/churn');
 app.use(bodyParser());
 app.use(methodOverride());
 app.use(express.static(path.resolve(__dirname, 'app')));
-//app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
 
 var Schema = mongoose.Schema;
 
@@ -21,119 +20,147 @@ var CardSchema = new Schema({
     rewardUnit: String,
     minSpend: Number,
 
-    balances: [{type: Schema.Types.ObjectId, ref: 'Balance'}]
+    balance: Number
 });
 
 var BalanceSchema = new Schema({
-    cardid: {type: Schema.Types.ObjectId, required:true},
+    cardid: { type: Schema.Types.ObjectId, required:true, Ref: 'Card' },
     asOf: Date,
     amount: Number
 });
 
-var CardModel = mongoose.model('Card', CardSchema);
+var CardModel    = mongoose.model('Card', CardSchema);
 var BalanceModel = mongoose.model('Balance', BalanceSchema);
 
+var combo = function(req) {
+    var rv = req.params || {};
+
+    for(var x in req.body) {
+        rv[x] = req.body[x];
+    }
+
+    return rv;
+};
+
 var queryModel = function(req,res, model, pop) {
-    var f = model.find();
+    var p = combo(req);
+
+    var f = model.find(p);
     if(pop) {
-        console.log('pop', pop);
         f = f.populate(pop);
     }
     f.exec(function (err, items) {
-        console.log('find ', err, items);
         if (!err) {
-            return res.send(items);
+            if(pop){
+                console.log(items);
+            }
+            res.send(items);
         } else {
             res.send(err);
-            console.log(err);
         }
     });
 };
 
-var saveModel = function(req,res, model){
-    var doSave = function(c, msg) {
-        c.save(function(err){
-            if(err){
-                console.log('save err', err);
-                res.send(500, err);
+var doSave = function(res, c, msg, saveFn) {
+    c.save(function(err) {
+        if(err) {
+            console.log('save err', err);
+            res.send(500, err);
+        } else {
+            console.log('save success ', msg, c);
+
+            if (saveFn) {
+                saveFn(res, c._doc);
             } else {
-                console.log('save success');
                 res.send(200, msg);
             }
-        });
-    };
+        }
+    });
+};
 
-    if(req.body._id) {
+var saveModel = function(req,res, model, saveFn) {
+    var p = combo(req);
+
+    if(p._id) {
         console.log('update');
-        model.findById(req.body._id, function(err,item){
-            if(err){
-                res.send(500,err);
+        model.findById(p._id, function(err, item) {
+            if(err) {
+                res.send(500, err);
+            } else if (!item) {
+                console.log('attempting to save to an item that does not exist');
+                res.send(500, 'item not found');
             } else {
-                for(var x in req.body){
-                    item[x] = req.body[x];
+                for (var x in p) {
+                    item[x] = p[x];
                 }
-                doSave(item, 'update');
+                doSave(res, item, 'update', saveFn);
             }
         });
     } else {
-        console.log('create');
-        var c = new model(req.body);
-        doSave(c, 'create');
+        var c = new model(p);
+        doSave(res, c, 'create', saveFn);
     }
 };
 
-var delModel = function(req,res, model){
-    model.findById(req.params._id, function(err, foundItem){
-        console.log('found?');
+var delModel = function(req,res, model) {
+    model.findByIdAndRemove(req.params._id, function(err) {
         if (err) {
             res.send(500, err);
         } else {
-            foundItem.remove(function(err, deadItem){
-                if(err) {
-                    res.send(500,err);
-                } else {
-                    model.findById(deadItem._id, function(err){
-                        if(err) {
-                            res.send(500,err);
-                        } else {
-                            res.send(200,'deleted');
-                        }
-                    });
-                }
-            });
+            res.send(200,'deleted');
         }
     });
 };
 
-var resty = function(str, model, pop) {
+var resty = function(str, model, popOrSaveFn) {
+    console.log('resty ', str);
+
+    var pop;
+    var saveFn;
+
+    if ( typeof popOrSaveFn === 'string') {
+        pop = popOrSaveFn;
+    } else {
+        saveFn = popOrSaveFn;
+    }
+
     app.get('/api/' + str, function(req,res) {
         console.log('GET /api/' + str);
-        queryModel(req,res, model, pop);
+        queryModel(req, res, model, pop);
     });
-
+    // TODO: refactor POST with PUT+PATCH
     app.post('/api/' + str, function(req,res) {
         console.log('POST /api/' + str);
-        console.log('body: ', req.body);
+        saveModel(req, res, model, saveFn);
+    });
 
-        saveModel(req,res, model);
+    app.put('/api/' + str + '/:_id', function(req, res ) {
+        console.log('PUT /api/' + str + '/:_id');
+        model.findByIdAndUpdate(req.params._id, req.body, function(err, ))
     });
 
     app.delete('/api/' + str + '/:_id', function(req,res) {
         console.log('DELETE /api/' + str + '/' + req.params._id);
-        console.log('params: ', req.params);
-        console.log('body: ', req.body);
-
-        deleteModel(req,res, model);
+        delModel(req, res, model);
     });
 };
 
-resty('cards', CardModel, 'balances');
-resty('balances', BalanceModel);
+resty('cards', CardModel);
+resty('cards/:cardid/balances', BalanceModel, function(res, bal) {
+    CardModel.findByIdAndUpdate(bal.cardid, {balance:bal.amount}, function(err, card) {
+        if(err) {
+            res.send(500, err);
+        } else {
+            res.send(200, 'saved');
+        }
+    });
+});
 
-var port = process.env.PORT || 3000;
-var myip = process.env.IP || "0.0.0.0";
+var addr = {
+    port: process.env.PORT || 3000,
+    address: process.env.IP || "0.0.0.0"
+};
 
-app.listen(port, myip, function(){
-    var addr = { address: myip, port: port };
+app.listen(addr.port, addr.address, function() {
     console.log("Chat server listening at", addr.address + ":" + addr.port);
 });

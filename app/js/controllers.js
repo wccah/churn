@@ -4,8 +4,8 @@
 
 angular.module('myApp.controllers', ['myApp.services'])
   .controller('myController', [
-  	"$scope", "cardRes", "balRes",
-  	function($scope, cardRes, balRes) {
+  	"$scope", "$filter", "cardRes", "balRes",
+  	function($scope, $filter, cardRes, balRes) {
         var newCard = {
             name: 'New Card',
             deadline: new Date(),
@@ -20,38 +20,51 @@ angular.module('myApp.controllers', ['myApp.services'])
         };
 
         $scope.newCard = angular.extend({}, newCard);
-        $scope.newBalance = angular.extend({}, newBal);
 
-        $scope.cards = cardRes.query();
+        var cq = function () {
+            $scope.cards = cardRes.query({}, function (xx) {
+                angular.forEach(xx, function(x){
+                    x.newBalance = angular.extend({cardid: x._id}, newBal);
+                });
+            });
+        };
+        cq();
 
         $scope.saveCard = function(card) {
-            var ssave = function () {
-                delete card.balances;
+            delete card.newBalance;
 
-                cardRes.save(card, function(){
+            cardRes.save(card, function() {
+                if(!card._id) {
                     $scope.newCard = angular.extend({}, newCard);
-                    $scope.cards = cardRes.query();
-                });
-            };
-
-            if (! angular.equals(newBal, $scope.newBalance)){
-                $scope.newBalance.cardid = card._id;
-                balRes.save($scope.newBalance, function(){
-                    $scope.newBalance = angular.extend({}, newBal);
-                    ssave();
-                });
-            } else {
-                ssave();
-            }
-
-
+                }
+                cq();
+            });
         };
 
         $scope.deleteCard = function(card) {
             cardRes.delete(card, function() {
-                $scope.cards = cardRes.query();
+                cq();
             });
         };
 
+        $scope.showBalances = function(cardid) {
+            var card = $filter("filter")($scope.cards, {_id: cardid})[0];
 
+            card.balances = balRes.query({cardid: cardid});
+        };
+
+        $scope.saveBalance = function(bal) {
+            var b = new balRes(bal);
+            b.$save({cardid: bal.cardid}, function() {
+                $scope.showBalances(bal.cardid);
+            });
+        };
+
+        $scope.deleteBalance = function(cardid, balid) {
+            var j = {cardid:cardid, _id:balid};
+            var b = new balRes(j);
+            b.$delete(j, function() {
+                $scope.showBalances(cardid);
+            })
+        };
   }]);

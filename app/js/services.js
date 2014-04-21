@@ -65,8 +65,6 @@ function convertDateStringsToDates(input) {
         return timestamp;
     };
 
-// Demonstrate how to register services
-// In this case it is a simple value service.
     angular.module('myApp.services', ['ngResource'])
         .value('version', '0.1')
         .config(["$httpProvider", function ($httpProvider) {
@@ -81,6 +79,6 @@ function convertDateStringsToDates(input) {
             }])
         .factory('balRes', ['$resource',
             function($resource){
-                return $resource('/api/balances/:_id');
+                return $resource('/api/cards/:cardid/balances/:_id');
             }]);
 })(angular);

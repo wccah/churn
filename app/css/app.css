@@ -1,11 +1,20 @@
 /* app css stylesheet */
 
+body, input, button {
+    font-family: "Trebuchet MS";
+    font-size: 8pt;
+}
+
 input {
     width: 130px;
 }
 
-input[type='button']{
+input[type='button'], button{
     width: 80px;
+}
+
+li {
+    border: 1px solid #ccc;
 }
 
 li > div {
@@ -15,4 +24,9 @@ li > div {
 li > div > label {
     width: 60px;
     display: inline-block;
+}
+
+li > div > span {
+    display: inline-block;
+    width: 60px;
 }
