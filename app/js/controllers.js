@@ -2,10 +2,12 @@
 
 /* Controllers */
 
-angular.module('myApp.controllers', ['myApp.services'])
+angular.module('myApp.controllers', ['myApp.services', 'restangular'])
   .controller('myController', [
-  	"$scope", "$filter", "cardRes", "balRes",
-  	function($scope, $filter, cardRes, balRes) {
+  	"$scope", "$filter", "cardRes", "balRes", "Restangular",
+  	function($scope, $filter, cardRes, balRes, resty) {
+        var Restangular = resty.all('api');
+
         var newCard = {
             name: 'New Card',
             deadline: new Date(),
@@ -22,6 +24,14 @@ angular.module('myApp.controllers', ['myApp.services'])
         $scope.newCard = angular.extend({}, newCard);
 
         var cq = function () {
+            Restangular.all('cards').getList().then(function(cards) {
+                for(var i = 0; i < cards.length;i++) {
+                    var x = cards[i];
+                    x.newBalance = angular.extend({cardid: x._id}, newBal);
+                }
+                $scope.cards = cards;
+            });
+            return;
             $scope.cards = cardRes.query({}, function (xx) {
                 angular.forEach(xx, function(x){
                     x.newBalance = angular.extend({cardid: x._id}, newBal);
@@ -31,6 +41,16 @@ angular.module('myApp.controllers', ['myApp.services'])
         cq();
 
         $scope.saveCard = function(card) {
+            var mythen = function() {
+
+            };
+            if ( !card._id ) {
+                card.post().then(function() {
+                    $scope.newCard = angular.extend({}, newCard);
+                }).then(mythen);
+            } else {
+                card.patch().then(mythen);
+            }
             delete card.newBalance;
 
             cardRes.save(card, function() {
@@ -53,10 +73,13 @@ angular.module('myApp.controllers', ['myApp.services'])
             card.balances = balRes.query({cardid: cardid});
         };
 
-        $scope.saveBalance = function(bal) {
+        $scope.saveBalance = function(card, bal) {
             var b = new balRes(bal);
-            b.$save({cardid: bal.cardid}, function() {
-                $scope.showBalances(bal.cardid);
+            b.$patch({cardid: bal.cardid}, function(res, headers) {
+                var id = headers.location.split(/\//g).pop();
+                bal._id = id;
+                card.balances.push(bal);
+                card.newBalance = angular.extend({cardid: card._id}, newBal);
             });
         };
 

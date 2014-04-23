@@ -6,6 +6,8 @@
     <script src="js/angular/angular.js"></script>
     <script src="js/angular/angular-route.js"></script>
     <script src="js/angular/angular-resource.js"></script>
+    <script src="js/restangular/restangular.js"></script>
+    <script src="js/underscore/underscore.js"></script>
     <script src="js/app.js"></script>
     <script src="js/services.js"></script>
     <script src="js/controllers.js"></script>
@@ -65,7 +67,7 @@
                         <label>bal:</label>
                         <input ng-model="card.newBalance.amount" />
 
-                        <button ng-click="saveBalance(card.newBalance)">save bal</button>
+                        <button ng-click="saveBalance(card, card.newBalance)">save bal</button>
                     </div>
                 </li>
                 <li ng-repeat="bal in card.balances">

@@ -107,41 +107,86 @@ var delModel = function(req,res, model) {
         if (err) {
             res.send(500, err);
         } else {
-            res.send(200,'deleted');
+            res.send(200, 'deleted');
         }
     });
 };
 
-var resty = function(str, model, popOrSaveFn) {
+var resty = function(str, model) {
     console.log('resty ', str);
 
-    var pop;
-    var saveFn;
-
-    if ( typeof popOrSaveFn === 'string') {
-        pop = popOrSaveFn;
-    } else {
-        saveFn = popOrSaveFn;
-    }
-
-    app.get('/api/' + str, function(req,res) {
-        console.log('GET /api/' + str);
-        queryModel(req, res, model, pop);
+    app.get('/api/' + str + '/:_id', function(req, res) {
+        console.log('GET /api/' + str + '/:_id');
+        console.log(req.params);
+        model.findById(req.params._id, function(err, item) {
+            if (err) {
+                res.send(500, err);
+            } else if (!item) {
+                res.send(404, 'item not found by id');
+            } else {
+                res.send(200, item);
+            }
+        });
     });
-    // TODO: refactor POST with PUT+PATCH
-    app.post('/api/' + str, function(req,res) {
+
+    app.get('/api/' + str, function(req, res) {
+        console.log('GET /api/' + str + ' (ALL)');
+        model.find().exec(function(err, items) {
+           if (err) {
+               res.send(500, err);
+           } else {
+               res.send(200, items);
+           }
+        });
+    });
+
+    app.post('/api/' + str, function(req, res) {
         console.log('POST /api/' + str);
-        saveModel(req, res, model, saveFn);
+        if (typeof req.body._id !== 'undefined') {
+            res.send(500, {
+                msg: "invalid id for POST",
+                id: req.body._id
+            });
+        } else {
+            var newModel = new model(req.body);
+            newModel.save(function (err, newModel2, count) {
+                if (err) {
+                    res.send(500, err);
+                } else if (count !== 1) {
+                    res.send(500, {
+                        msg: "no record updated",
+                        count: count
+                    });
+                } else {
+                    res.set({ location: '/api/' + str + '/' + newModel2._id });
+                    res.send(200, 'created');
+                }
+            });
+        }
     });
 
-    app.put('/api/' + str + '/:_id', function(req, res ) {
-        console.log('PUT /api/' + str + '/:_id');
-        model.findByIdAndUpdate(req.params._id, req.body, function(err, ))
+    app.patch('/api/' + str + '/:_id', function(req, res ) {
+        console.log('PATCH /api/' + str + '/:_id');
+        var b = req.body;
+        b._id = req.params._id;
+        model.findByIdAndUpdate(req.params._id, b, function(err) {
+            if (err) {
+                res.send(500, err);
+            } else {
+                res.send(200, 'updated');
+            }
+        });
     });
 
     app.delete('/api/' + str + '/:_id', function(req,res) {
         console.log('DELETE /api/' + str + '/' + req.params._id);
-        delModel(req, res, model);
+        model.findByIdAndRemove(req.params._id, function(err) {
+            if (err) {
+                res.send(500, err);
+            } else {
+                res.send(200, 'deleted');
+            }
+        });
     });
 };
 

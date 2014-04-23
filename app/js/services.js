@@ -75,10 +75,14 @@ function convertDateStringsToDates(input) {
         }])
         .factory('cardRes', ['$resource',
             function($resource) {
-                return $resource('/api/cards/:_id');
+                return $resource('/api/cards/:_id', {
+                    patch: { method: 'PATCH' }
+                });
             }])
         .factory('balRes', ['$resource',
             function($resource){
-                return $resource('/api/cards/:cardid/balances/:_id');
+                return $resource('/api/cards/:cardid/balances/:_id', {
+                    patch: { method: 'PATCH'}
+                });
             }]);
 })(angular);
